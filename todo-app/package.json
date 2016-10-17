@@ -1,0 +1,16 @@
+{
+  "name": "todo-app",
+  "version": "0.1.0",
+  "description": "A simple todo app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "polymer":"polymer",
+    "bower":"bower",
+    "serve":"polymer serve -v -H 0.0.0.0",
+    "postinstall":"bower install",
+    "start":"npm install && npm run serve"
+  },
+  "author": "Fabrice Le Coz",
+  "license": "ISC"
+}

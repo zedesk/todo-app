@@ -1,0 +1,36 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="./todo-project-view.html">
+<link rel="import" href="./todo-swipeable-card.html">
+
+<!--
+`todo-app`
+
+
+@demo demo/index.html
+-->
+
+<dom-module id="todo-app">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <todo-project-view></todo-project-view>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'todo-app',
+
+      properties: {
+        prop1: {
+          type: String,
+          value: 'todo-app',
+        },
+      },
+
+    });
+  </script>
+</dom-module>

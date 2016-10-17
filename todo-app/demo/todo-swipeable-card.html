@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+  <head>
+    <title>todo-swipeable-card demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+
+    <link rel="import" href="../todo-swipeable-card.html">
+
+    <link rel="import" href="../../paper-item/paper-item.html">
+    <link rel="import" href="../../paper-item/paper-item-body.html">
+    <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+    <link rel="import" href="../../iron-icons/iron-icons.html">
+    <link rel="import" href="../../iron-icons/av-icons.html">
+
+    <style is="custom-style" include="demo-pages-shared-styles iron-flex iron-positioning">
+    body {
+      padding:0px;
+    }
+    paper-item {
+      background: white;
+      border:1px solid black;
+      box-sizing: border-box;
+    }
+    </style>
+  </head>
+  <body >
+    <p>test</p>
+      <todo-swipeable-card undo-timeout="1000">
+          <paper-item-body two-line>
+            <div>swipeable component</div>
+            <div secondary>in progress</div>
+          </paper-item-body>
+          <paper-icon-button class="pause" icon="av:play-arrow"></paper-icon-button>
+      </todo-swipeable-card>
+      <script>
+      let elt = document.querySelector('todo-swipeable-card');
+      elt.addEventListener('iron-swipe', (evt) => {
+        elt.parentNode.removeChild(elt);
+        console.log(evt.detail);
+      });
+      </script>
+  </body>
+</html>

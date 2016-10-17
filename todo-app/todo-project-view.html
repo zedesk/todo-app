@@ -1,0 +1,264 @@
+<link rel="import" href="./todo-app-toolbar.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-item/paper-item-body.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-fab/paper-fab.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/av-icons.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../iron-form/iron-form.html">
+<link rel="import" href="./todo-swipeable-card.html">
+
+<!--
+# `<todo-project-view>`
+
+@demo demo/todo-project-view.html
+-->
+<dom-module id="todo-project-view">
+  <template>
+    <style>
+      :host {
+        position:relative;
+        display: block;
+        @apply(--fullbleed);
+        @apply(--layout-vertical);
+      }
+      paper-icon-button {
+        --paper-icon-button-ink-color: dodgerblue;
+        border:2px solid dodgerblue;
+        color: dodgerblue;
+        border-radius: 50%;
+        margin:10px;
+      }
+      paper-icon-button[icon=done] {
+        --paper-icon-button-ink-color: lightseagreen;
+        color: MediumTurquoise;
+        border-color: MediumTurquoise;
+      }
+      paper-icon-button[icon=delete] {
+        color: crimson;
+        border-color: crimson;
+      }
+      paper-fab {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+      }
+      .active-tasks-list {
+        flex: 1;
+        padding-bottom: 80px;
+        overflow: auto;
+      }
+      .control {
+        text-align: right;
+      }
+      .primary {
+        background: var(--primary-color);
+        color:var(--primary-background-color);
+      }
+      .secondary {
+        background: var(--secondary-text-color);
+        color:var(--primary-background-color);
+      }
+      .time {
+        font-weight: bold;
+        font-size: 24px;
+      }
+      .running {
+        @apply(--layout-vertical);
+        background:#d0e2e2;
+        transition: 0.3s ease-in-out;
+      }
+      .running .task {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        width: 100%;
+      }
+      .running .control {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        flex-direction: row-reverse;
+        width: 100%;
+      }
+      #newtask {
+        position: absolute;
+        left:0;
+        right:0;
+        background: white;
+        padding:10px;
+        transition: 0.3s ease-in-out;
+        box-shadow:0px 5px 25px darkgray;
+        overflow: auto;
+        /* 100% minus paddings */
+        max-height: calc(100% - 20px);
+      }
+      #newtask.hidden {
+        transform: translateY(-250px);
+      }
+      #view {
+        position:relative;
+        flex:1;
+        overflow:hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      paper-item {
+        background: white;
+      }
+    </style>
+    <todo-app-toolbar label={{project.name}}></todo-app-toolbar>
+    <div id="view" >
+
+    <template is="dom-if" if="{{current}}" restamp="true">
+      <paper-item class="running">
+        <div class="task">
+          <paper-item-body two-line>
+            <div>{{current.label}}</div>
+            <div secondary>{{current.status}}</div>
+          </paper-item-body>
+          <div class="time">00:00</div>
+        </div>
+        <div class="control">
+          <paper-icon-button icon="av:pause"></paper-icon-button>
+          <paper-icon-button icon="av:stop"></paper-icon-button>
+          <paper-icon-button icon="done"></paper-icon-button>
+        </div>
+      </paper-item>
+    </template>
+    <div class="active-tasks-list">
+      <template id="list" is="dom-repeat" items="{{project.tasks}}">
+        <todo-swipeable-card undo-timeout=1000
+                  active={{_activated(item.active)}}
+                  on-iron-swipe="_todoAction"
+                  on-tap="_activate" >
+        <!-- <paper-item> -->
+          <paper-item-body two-line>
+            <div>[[item.label]]</div>
+            <div secondary>[[item.status]]</div>
+          </paper-item-body>
+          <paper-icon-button class="pause" icon="av:play-arrow"></paper-icon-button>
+        <!-- </paper-item> -->
+      </todo-swipeable-card>
+      </template>
+      <paper-fab icon="add" on-tap="_newTaskForm"></paper-fab>
+    </div>
+    <div id="done-tasks-list">
+    </div>
+
+    <div id="newtask" class="hidden">
+      <form is="iron-form" id="form">
+        <paper-input label="label" value="{{_newTask.label}}" autofocus></paper-input>
+        <div class="layout horizontal">
+          <paper-input label="due date" value="{{_newTask.dueDate}}"></paper-input>
+          <paper-input label="planned time"  value="{{_newTask.planned}}"></paper-input>
+        </div>
+      </form>
+      <div class="control">
+        <paper-button class="secondary" on-tap="_close">Cancel</paper-button>
+        <paper-button class="primary" on-tap="_save">Save</paper-button>
+      </div>
+    </div>
+  </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'todo-project-view',
+
+      properties: {
+        project: {
+          type: Object,
+          notify: true,
+          observer: "_projectChanged"
+        },
+        _newTask: {
+          type: Object,
+        },
+        _selected: {
+          type: Number,
+          value: null
+        },
+      },
+
+      _projectChanged: function() {
+        let _isRunning = task => task.status==="in progress";
+
+        this.current = this.project.tasks.filter(_isRunning)[0];
+      },
+
+      _isPending: (item) => {
+        return item.status === "pending";
+      },
+
+      _isProgress: (item) => {
+        return item.status === "in progress";
+      },
+
+      _newTaskForm: function() {
+        this._newTask = {};
+        this.$.newtask.classList.toggle("hidden");
+        this.$.form.querySelector('paper-input').$.input.focus();
+      },
+
+      _close: function() {
+        this.$.form.reset();
+        if(!this.$.newtask.classList.contains("hidden")) {
+          this.$.newtask.classList.add("hidden")
+        }
+      },
+
+      _save: function() {
+        if(this._newTask.label) {
+          let newTask = Object.assign(this._newTask, { status:"pending", consummed:0});
+          this.push('project.tasks', newTask);
+        }
+        this._close()
+      },
+
+      _activated: function(value) {
+        return value?value:false;
+      },
+
+      _activate: function(evt) {
+        // console.log('activate',evt.model.index, this._selected );
+        let task;
+        if (this._selected !== null) {
+          this.set(`project.tasks.${this._selected}.active`,false);
+        }
+        if (this._selected !== evt.model.index) {
+          this._selected = evt.model.index;
+          this.set(`project.tasks.${this._selected}.active`,true);
+        } else {
+          this._selected = null;
+        }
+      },
+
+      _todoAction: function(evt) {
+        console.log(evt.detail, evt.model.item);
+        switch (evt.detail.direction) {
+          case 'done':
+            this.push('project.done', evt.model.item);
+            this.splice('project.tasks', evt.model.index, 1);
+            break;
+          case 'delete':
+            this.splice('project.tasks', evt.model.index, 1);
+            break;
+        }
+      },
+
+      _stop: function(evt) {
+
+      },
+
+      _pause: function(evt) {
+
+      },
+
+      _start: function(evt) {
+
+      },
+    });
+  </script>
+</dom-module>

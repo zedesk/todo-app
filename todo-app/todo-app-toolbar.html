@@ -1,0 +1,53 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+<!--
+
+@demo demo/todo-app-toolbar.html
+-->
+<dom-module id="todo-app-toolbar">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <paper-toolbar>
+      <paper-icon-button icon="menu" ></paper-icon-button>
+      <div class="title">{{label}}</div>
+      <paper-menu-button horizontal-align="right" id="editForm">
+        <paper-icon-button icon="create" class="dropdown-trigger" ></paper-icon-button>
+        <paper-menu class="dropdown-content" >
+          <paper-input label="Project name :" value={{label}} on-keypress="_handleInput"></paper-input>
+        </paper-menu>
+      </paper-menu-button>
+    </paper-toolbar>
+  </template>
+  <script>
+    Polymer({
+      is: 'todo-app-toolbar',
+      properties: {
+        /**
+        The label of the project or inbox
+        */
+        label: {
+          type: String,
+          notify: true,
+        }
+      },
+
+      /**
+      fired when the user type into the input element
+      */
+      _handleInput: function(evt) {
+        if(evt.keyCode === 13) {
+          this.$.editForm.opened = false;
+        }
+      },
+    });
+  </script>
+</dom-module>

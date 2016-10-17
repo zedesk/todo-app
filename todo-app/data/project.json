@@ -1,0 +1,45 @@
+{
+  "name":"My Project",
+  "tasks": [
+    {
+      "label":"Create the toolbar component",
+      "status":"in progress",
+      "planned":7200,
+      "consummed":3600,
+      "state":"running"
+    },{
+      "label":"Project tasks view",
+      "status":"pending",
+      "planned":7200,
+      "consummed":0,
+      "state":"stopped",
+      "active":true
+    },{
+      "label":"Create the toolbar component",
+      "status":"in progress",
+      "planned":7200,
+      "consummed":3600,
+      "state":"stopped",
+      "active":false
+    },{
+      "label":"Project tasks view",
+      "status":"pending",
+      "planned":7200,
+      "consummed":0,
+      "state":"stopped"
+    },{
+      "label":"Create the toolbar component",
+      "status":"in progress",
+      "planned":7200,
+      "consummed":3600,
+      "state":"stopped"
+    },{
+      "label":"Project tasks view",
+      "status":"pending",
+      "planned":7200,
+      "consummed":0,
+      "state":"stopped"
+    }
+  ],
+  "done":[]
+}

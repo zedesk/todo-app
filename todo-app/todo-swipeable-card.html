@@ -1,0 +1,298 @@
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-item/paper-item-behavior.html">
+<link rel="import" href="../paper-item/paper-item-shared-styles.html">
+
+<!--
+# `<todo-swipeable-card>`
+
+@demo demo/todo-swipeable-card.html
+-->
+<dom-module id="todo-swipeable-card">
+  <template>
+    <style>
+      :host {
+        position: relative;
+        display: block;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -webkit-user-select: none;
+        user-select: none;
+        cursor: default;
+      }
+      :host(:focus), .paper-item:focus {
+        position: relative;
+        outline: 0;
+        @apply(--paper-item-focused);
+      }
+      .back {
+        position:absolute;
+        left:0;
+        right:0;
+        bottom:0;
+        top:0;
+        background: lightgray;
+        color: white;
+        font-variant: small-caps;
+        font-size: 24px;
+        padding:0px 20px;
+        align-items: center;
+        display: flex;
+      }
+      .left {
+        background: crimson;
+      }
+      .right {
+        background: green;
+      }
+      .spacer {
+        flex:1;
+      }
+      .hidden {
+        display:none;
+      }
+      .undo {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        flex:1;
+      }
+      .left .undo {
+        justify-content: flex-start;
+      }
+      .right .undo {
+        justify-content: flex-end;
+      }
+      .card {
+        background:var(--primary-background-color,'#fff');
+        padding:0 16px;
+        @apply(--layout-horizontal);
+        @apply(--layout-center);
+        @apply(--paper-font-subhead);
+        @apply(--paper-item);
+      }
+      .active {
+        background: lightgray;
+      }
+    </style>
+    <div id="left" class="back left hidden">
+      <div class="undo" on-tap="_undo">Undo</div>
+      <span class="spacer"></span>
+      <div>Delete <iron-icon icon="delete"></iron-icon></div>
+    </div>
+    <div id="right" class="back right hidden">
+      <div><iron-icon icon="done"></iron-icon> Done</div>
+      <span class="spacer"></span>
+      <div class="undo" on-tap="_undo">Undo</div>
+    </div>
+    <div id="card" class="card">
+      <content id="content"></content>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'todo-swipeable-card',
+
+      properties: {
+        active: {
+          type: Boolean,
+          value: false,
+          reflectToAttribute: true,
+          observer: '_activeChanged',
+        },
+        /**
+         * The style in which to swipe the card. Currently supported
+         * options are `curve | horizontal`. If left unspecified, the default
+         * is assumed to be `horizontal`.
+         */
+        swipeStyle: {
+          type: String,
+          value: 'horizontal'
+        },
+
+        /**
+         * The ratio of the width of the element that the translation animation
+         * should happen over. For example, if the `widthRatio` is 3, the
+         * animation will take place on a distance 3 times the width of the
+         * element being swiped.
+         */
+        widthRatio: {
+          type: Number,
+          value: 3
+        },
+
+        /**
+         * The ratio of the total animation distance after which the opacity
+         * transformation begins. For example, if the `widthRatio` is 1 and
+         * the `opacityRate` is 0.5, then the element needs to travel half its
+         * width before its opacity starts decreasing.
+         */
+        opacityRate: {
+          type: Number,
+          value: 0.2
+        },
+
+        /**
+         * The CSS transition applied while swiping.
+         */
+        transition: {
+          type: String,
+          value: '300ms cubic-bezier(0.4, 0.0, 0.2, 1)'
+        },
+
+        /**
+         * the delay in miliseconds before firing the ìron-swipe` event.
+         * During this delay, the operation could be cancelled by taping
+         * the undo button.
+         */
+        undoTimeout: {
+          type: Number,
+          value: 5000,
+        }
+      },
+
+
+
+      ready: function() {
+        this._transitionProperty = 'opacity, transform';
+        this._swipeComplete = false;
+        this._direction = '';
+        this.toggles = true;
+      },
+
+      _activeChanged: function(active) {
+          if(active && !this.$.card.classList.contains('active')) {
+            this.$.card.classList.add('active');
+            this._addListeners();
+          }
+          if(!active) {
+            this.$.card.classList.remove('active');
+            this._removeListeners();
+          }
+      },
+
+      _addListeners: function() {
+        let node = this.$.card;
+        // Set up the animation.
+        node.style.transitionProperty = this._transitionProperty;
+        node.style.transition = this.transition
+        this.listen(node, 'track', '_onTrack');
+        this.listen(node, 'transitionend', '_onTransitionEnd');
+      },
+
+      _removeListeners: function() {
+        let node = this.$.card;
+        this.unlisten(node, 'track', '_onTrack');
+        this.unlisten(node, 'transitionend', '_onTransitionEnd');
+      },
+
+      _onTrack: function(evt) {
+        let track = evt.detail;
+        if (track.state === 'start') {
+          this._trackStart(track, this.$.card);
+        } else if (track.state === 'track') {
+          this._trackMove(track, this.$.card);
+        } else if (track.state === 'end') {
+          this._trackEnd(track, this.$.card);
+        }
+        // evt.stopPropagation();
+      },
+
+      _onTransitionEnd: function(evt) {
+        let target = this.$.card;
+
+        if (this._swipeComplete && evt.propertyName === 'opacity') {
+          this._undoTimer = setTimeout( () => {
+            // Polymer.dom(this).removeChild(target);
+            this._removeListeners();
+            this.fire('iron-swipe',{
+              direction: this._direction > 0 ? 'done' : 'delete',
+              target: this
+            });
+          }, this.undoTimeout);
+        }
+      },
+
+      _trackStart: function(evt) {
+        this._nodeWidth = this.$.card.offsetWidth;
+        this.$.card.style.transition = 'none';
+      },
+
+      _trackMove: function( evt) {
+        this._animate(evt.dx);
+      },
+
+      _trackEnd: function(evt) {
+        let target = this.$.card;
+        // The element is swiped away if it's moved at least one third of its total width.
+        this._swipeComplete = Math.abs(evt.dx) > this._nodeWidth / 3;
+        this._direction = evt.dx > 0;
+        this._swipeEnd();
+      },
+
+      _animate: function(x) {
+        let target = this.$.card;
+        var direction = x > 0 ? 1 : -1;
+
+        if (x > 0) {
+          this.$.right.classList.remove('hidden');
+          if(!this.$.left.classList.contains('hidden')) {
+            this.$.left.classList.add('hidden');
+          }
+        }
+        if (x < 0) {
+          this.$.left.classList.remove('hidden');
+          if(!this.$.right.classList.contains('hidden')) {
+            this.$.right.classList.add('hidden');
+          }
+        }
+        // This is the total distance the animation will take place over.
+        var totalDistance = this._nodeWidth * this.widthRatio;
+        // Opacity distance overflow. `this._nodeWidth * this.opacityRate` is the
+        // total distance the element needs to travel to become completely
+        // transparent, and `x` is how much the element has already travelled.
+        var opaqueDistance = Math.max(0, Math.abs(x) - this._nodeWidth * this.opacityRate);
+        var opacity = Math.max(0, (totalDistance - opaqueDistance) / totalDistance);
+        target.style.opacity = opacity;
+        var translate, rotate;
+        if (this.swipeStyle === 'horizontal') {
+          translate = 'translate3d(' + x + 'px,' + 0 + 'px,0)';
+          rotate = '';
+        } else {  // Default is assumed to be `curve`.
+          // Assume the element will be completely transparent at 90 degrees, so
+          // figure out the rotation and vertical displacement needed to
+          // achieve that.
+          var y = totalDistance - Math.sqrt(totalDistance * totalDistance - opaqueDistance * opaqueDistance);
+          var deg = (1 - opacity) * direction * 90;
+          translate = 'translate3d(' + x + 'px,' + y + 'px,0)';
+          rotate = ' rotate(' + deg + 'deg)';
+        }
+        this.transform(translate + rotate, target);
+      },
+
+      _swipeEnd: function() {
+        let target = this.$.card;
+        // Restore the original transition;
+        target.style.transition = this.transition;
+        if (this._swipeComplete) {
+          // If the element is ready to be swiped away, then translate it to the full
+          // transparency distance.
+          var totalDistance = this._nodeWidth * this.widthRatio;
+          this._animate(this._direction ? totalDistance : -totalDistance, target);
+        } else {
+          this._animate(0, target);
+        }
+      },
+
+      _undo: function() {
+        if (this._swipeComplete) {
+          this._swipeComplete = false;
+          clearTimeout(this._undoTimer);
+          this._undoTimer = null;
+          this._animate(0, this.$.card);
+        }
+      }
+
+    });
+  </script>
+</dom-module>
