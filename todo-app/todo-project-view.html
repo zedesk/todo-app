@@ -45,10 +45,11 @@
         bottom: 20px;
         right: 20px;
       }
-      .active-tasks-list {
+      .tasks-list {
         flex: 1;
         padding-bottom: 80px;
-        overflow: auto;
+        overflow-y: auto;
+        overflow-x: hidden;
       }
       .control {
         text-align: right;
@@ -78,7 +79,6 @@
       }
       .running .control {
         display: flex;
-        flex: 1;
         align-items: center;
         flex-direction: row-reverse;
         width: 100%;
@@ -112,35 +112,38 @@
     <todo-app-toolbar label={{project.name}}></todo-app-toolbar>
     <div id="view" >
 
-    <template is="dom-if" if="{{current}}" restamp="true">
-      <paper-item class="running">
-        <div class="task">
-          <paper-item-body two-line>
-            <div>{{current.label}}</div>
-            <div secondary>{{current.status}}</div>
-          </paper-item-body>
-          <div class="time">00:00</div>
-        </div>
-        <div class="control">
-          <paper-icon-button icon="av:pause"></paper-icon-button>
-          <paper-icon-button icon="av:stop"></paper-icon-button>
-          <paper-icon-button icon="done"></paper-icon-button>
-        </div>
-      </paper-item>
-    </template>
-    <div class="active-tasks-list">
+    <div class="tasks-list">
       <template id="list" is="dom-repeat" items="{{project.tasks}}">
         <todo-swipeable-card undo-timeout=1000
-                  active={{_activated(item.active)}}
-                  on-iron-swipe="_todoAction"
-                  on-tap="_activate" >
-        <!-- <paper-item> -->
-          <paper-item-body two-line>
-            <div>[[item.label]]</div>
-            <div secondary>[[item.status]]</div>
-          </paper-item-body>
-          <paper-icon-button class="pause" icon="av:play-arrow"></paper-icon-button>
-        <!-- </paper-item> -->
+                on-iron-swipe="_todoAction" >
+        <template is="dom-if" if="{{!_isRunning(item)}}">
+          <!-- <todo-swipeable-card undo-timeout=1000
+                  on-iron-swipe="_todoAction" > -->
+            <paper-item>
+              <paper-item-body two-line>
+                <div>[[item.label]]</div>
+                <div secondary>[[item.status]]</div>
+              </paper-item-body>
+              <paper-icon-button class="pause" icon="av:play-arrow"></paper-icon-button>
+            </paper-item>
+          <!-- </todo-swipeable-card> -->
+        </template>
+        <template is="dom-if" if="{{_isRunning(item)}}">
+          <paper-item class="running">
+            <div class="task">
+              <paper-item-body two-line>
+                <div>{{current.label}}</div>
+                <div secondary>{{current.status}}</div>
+              </paper-item-body>
+              <div class="time">00:00</div>
+            </div>
+            <div class="control">
+              <paper-icon-button icon="av:pause"></paper-icon-button>
+              <paper-icon-button icon="av:stop"></paper-icon-button>
+              <!-- <paper-icon-button icon="done"></paper-icon-button> -->
+            </div>
+          </paper-item>
+        </template>
       </todo-swipeable-card>
       </template>
       <paper-fab icon="add" on-tap="_newTaskForm"></paper-fab>
@@ -217,24 +220,6 @@
         this._close()
       },
 
-      _activated: function(value) {
-        return value?value:false;
-      },
-
-      _activate: function(evt) {
-        // console.log('activate',evt.model.index, this._selected );
-        let task;
-        if (this._selected !== null) {
-          this.set(`project.tasks.${this._selected}.active`,false);
-        }
-        if (this._selected !== evt.model.index) {
-          this._selected = evt.model.index;
-          this.set(`project.tasks.${this._selected}.active`,true);
-        } else {
-          this._selected = null;
-        }
-      },
-
       _todoAction: function(evt) {
         console.log(evt.detail, evt.model.item);
         switch (evt.detail.direction) {
@@ -246,6 +231,10 @@
             this.splice('project.tasks', evt.model.index, 1);
             break;
         }
+      },
+
+      _isRunning: function(item) {
+        return item.state==='running';
       },
 
       _stop: function(evt) {

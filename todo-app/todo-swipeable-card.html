@@ -63,14 +63,6 @@
       .right .undo {
         justify-content: flex-end;
       }
-      .card {
-        background:var(--primary-background-color,'#fff');
-        padding:0 16px;
-        @apply(--layout-horizontal);
-        @apply(--layout-center);
-        @apply(--paper-font-subhead);
-        @apply(--paper-item);
-      }
       .active {
         background: lightgray;
       }
@@ -94,12 +86,6 @@
       is: 'todo-swipeable-card',
 
       properties: {
-        active: {
-          type: Boolean,
-          value: false,
-          reflectToAttribute: true,
-          observer: '_activeChanged',
-        },
         /**
          * The style in which to swipe the card. Currently supported
          * options are `curve | horizontal`. If left unspecified, the default
@@ -152,23 +138,23 @@
       },
 
 
-
       ready: function() {
         this._transitionProperty = 'opacity, transform';
         this._swipeComplete = false;
         this._direction = '';
         this.toggles = true;
+        this._trackStart = this._trackStart.bind(this);
+        this._trackMove = this._trackMove.bind(this);
+        this._trackEnd = this._trackEnd.bind(this);
+        this._onTransitionEnd = this._onTransitionEnd.bind(this);
       },
 
-      _activeChanged: function(active) {
-          if(active && !this.$.card.classList.contains('active')) {
-            this.$.card.classList.add('active');
-            this._addListeners();
-          }
-          if(!active) {
-            this.$.card.classList.remove('active');
-            this._removeListeners();
-          }
+      attached: function() {
+        this._addListeners();
+      },
+
+      detached: function() {
+        this._removeListeners();
       },
 
       _addListeners: function() {
@@ -176,26 +162,36 @@
         // Set up the animation.
         node.style.transitionProperty = this._transitionProperty;
         node.style.transition = this.transition
-        this.listen(node, 'track', '_onTrack');
-        this.listen(node, 'transitionend', '_onTransitionEnd');
+        this.$$('.card').addEventListener('touchstart',this._trackStart, false);
+        this.$$('.card').addEventListener('touchmove',this._trackMove, false);
+        this.$$('.card').addEventListener('touchend',this._trackEnd, false);
+        this.$$('.card').addEventListener('mousedown',this._trackStart, false);
+        this.$$('.card').addEventListener('mousemove',this._trackMove, false);
+        this.$$('.card').addEventListener('mouseup',this._trackEnd, false);
+        this.$$('.card').addEventListener('transitionend',this._onTransitionEnd, false);
+        //this.listen(node, 'track', '_onTrack');
+        //this.listen(node, 'transitionend', '_onTransitionEnd');
       },
 
       _removeListeners: function() {
         let node = this.$.card;
-        this.unlisten(node, 'track', '_onTrack');
-        this.unlisten(node, 'transitionend', '_onTransitionEnd');
+        this.$$('.card').removeEventListener('touchstart',this._trackStart, false);
+        this.$$('.card').removeEventListener('touchmove',this._trackMove, false);
+        this.$$('.card').removeEventListener('touchend',this._trackEnd, false);
+        this.$$('.card').removeEventListener('transitionend',this._onTransitionEnd, false);
+        // this.unlisten(node, 'track', '_onTrack');
+        // this.unlisten(node, 'transitionend', '_onTransitionEnd');
       },
 
       _onTrack: function(evt) {
         let track = evt.detail;
         if (track.state === 'start') {
           this._trackStart(track, this.$.card);
-        } else if (track.state === 'track') {
+        } else if (track.state === 'track' ) {
           this._trackMove(track, this.$.card);
         } else if (track.state === 'end') {
           this._trackEnd(track, this.$.card);
         }
-        // evt.stopPropagation();
       },
 
       _onTransitionEnd: function(evt) {
@@ -203,8 +199,6 @@
 
         if (this._swipeComplete && evt.propertyName === 'opacity') {
           this._undoTimer = setTimeout( () => {
-            // Polymer.dom(this).removeChild(target);
-            this._removeListeners();
             this.fire('iron-swipe',{
               direction: this._direction > 0 ? 'done' : 'delete',
               target: this
@@ -215,18 +209,26 @@
 
       _trackStart: function(evt) {
         this._nodeWidth = this.$.card.offsetWidth;
+        this._origX = evt.screenX || evt.changedTouches[0].screenX;
+        this._track = true;
         this.$.card.style.transition = 'none';
       },
 
       _trackMove: function( evt) {
-        this._animate(evt.dx);
+        if(!this._track) return
+        const dx = ( evt.screenX || evt.changedTouches[0].screenX ) - this._origX;
+        if ( dx > 25 || dx < -25) {
+          this._animate(dx);
+        }
       },
 
       _trackEnd: function(evt) {
+        this._track = false;
         let target = this.$.card;
+        const dx = ( evt.screenX || evt.changedTouches[0].screenX )- this._origX;
         // The element is swiped away if it's moved at least one third of its total width.
-        this._swipeComplete = Math.abs(evt.dx) > this._nodeWidth / 3;
-        this._direction = evt.dx > 0;
+        this._swipeComplete = Math.abs(dx) > this._nodeWidth / 3;
+        this._direction = dx > 0;
         this._swipeEnd();
       },
 

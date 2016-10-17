@@ -6,21 +6,19 @@
       "status":"in progress",
       "planned":7200,
       "consummed":3600,
-      "state":"running"
+      "state":"stopped"
     },{
       "label":"Project tasks view",
       "status":"pending",
       "planned":7200,
       "consummed":0,
-      "state":"stopped",
-      "active":true
+      "state":"stopped"
     },{
       "label":"Create the toolbar component",
       "status":"in progress",
       "planned":7200,
       "consummed":3600,
-      "state":"stopped",
-      "active":false
+      "state":"running"
     },{
       "label":"Project tasks view",
       "status":"pending",
