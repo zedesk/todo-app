@@ -306,6 +306,7 @@ A task must validate this schema
         if(!this.task.sessionTime) {
           this.set('task.sessionTime',0);
         }
+        if(!this.task.consumed) { this.set('task.consumed',0); }
         this.$.pauseBtn.disabled = false;
         this.$.stopBtn.disabled = false;
         this.$.startBtn.disabled = true;
