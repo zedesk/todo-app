@@ -1,0 +1,18 @@
+version: "2"
+
+services:
+  database:
+    image: rethinkdb:2.3.5
+    container_name: todo-rethink
+    volumes:
+      - $PWD/data:/data
+    ports:
+      - 9000:8080
+  front:
+    image: zdkpolymer
+    container_name: todo-app
+    volumes:
+      - $PWD/todo-app:/app
+    ports:
+      - 8080:8080
+    
