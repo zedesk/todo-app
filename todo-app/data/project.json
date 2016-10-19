@@ -3,39 +3,35 @@
   "tasks": [
     {
       "label":"Create the toolbar component",
-      "status":"in progress",
       "planned":7200,
-      "consummed":3600,
-      "state":"stopped"
+      "consumed":3600,
+      "dueDate":1476828000,
+      "startDate":1475618400
     },{
       "label":"Project tasks view",
-      "status":"pending",
       "planned":7200,
-      "consummed":0,
-      "state":"stopped"
+      "consumed":0,
+      "state":"stopped",
+      "done":true
     },{
       "label":"Create the toolbar component",
-      "status":"in progress",
       "planned":7200,
-      "consummed":3600,
+      "consumed":3600,
       "state":"running"
     },{
       "label":"Project tasks view",
-      "status":"pending",
       "planned":7200,
-      "consummed":0,
+      "consumed":0,
       "state":"stopped"
     },{
       "label":"Create the toolbar component",
-      "status":"in progress",
       "planned":7200,
-      "consummed":3600,
+      "consumed":3600,
       "state":"stopped"
     },{
       "label":"Project tasks view",
-      "status":"pending",
       "planned":7200,
-      "consummed":0,
+      "consumed":0,
       "state":"stopped"
     }
   ],
