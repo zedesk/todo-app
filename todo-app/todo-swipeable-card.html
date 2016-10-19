@@ -144,7 +144,16 @@
         undoTimeout: {
           type: Number,
           value: 5000,
-        }
+        },
+
+        /**
+        * the dead width before the movement is take in account, useful
+        * for mobiles
+        */
+        deadWidth: {
+          type: Number,
+          value: 50,
+        },
       },
 
 
@@ -224,7 +233,7 @@
         if (this.disabled) { return; }
         if(!this._track) return
         const dx = ( evt.screenX || evt.changedTouches[0].screenX ) - this._origX;
-        if ( dx > 25 || dx < -25) {
+        if ( dx > this.deadWidth || dx < -this.deadWidth) {
           this._animate(dx);
         }
       },
