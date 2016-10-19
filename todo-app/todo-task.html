@@ -1,0 +1,349 @@
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-item/paper-item-body.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-icons/av-icons.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<script src="../moment/min/moment-with-locales.min.js"></script>
+
+<!--
+# todo-task
+
+This component display and manage a task Object
+
+A task must validate this schema
+
+~~~
+{
+  "type":"object",
+  "properties": {
+    "label": {
+      "type": "string",
+      "description": "The label of the task",
+      "required": true
+    },
+    "done": {
+      "type":"boolean",
+      "description":"indicate if the task is active or done"
+    },
+    "state": {
+      "enum": ["stopped","running","paused"],
+      "description": "the state of the task"
+    },
+    "dueDate": {
+      "type": "integer",
+      "description": "timestamp of the due date"
+    },
+    "startDate": {
+      "type": "integer",
+      "description": "timestamp of the start date"
+    },
+    "endDate": {
+      "type": "integer",
+      "description": "timestamp of the end date ( when the task is done )"
+    },
+    "consumed": {
+      "type": "integer",
+      "description": "number of seconds consumed to realize the task"
+    },
+    "planned": {
+      "type": "integer",
+      "description": "number of seconds planned to realize the task"
+    },
+  }
+}
+~~~
+
+@demo demo/todo-task.html
+-->
+<dom-module id="todo-task">
+  <template>
+    <style>
+      :host {
+        display: flex;
+        padding:10px 10px;
+        flex-direction: column;
+        background: white;
+      }
+      .title {
+        font-weight: bold;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-bottom: 5px;
+      }
+      .content {
+        display: flex;
+      }
+      paper-icon-button {
+        height:32px;
+        width:32px;
+        padding:4px;
+        --paper-icon-button-ink-color: dodgerblue;
+        border:2px solid dodgerblue;
+        color: dodgerblue;
+        border-radius: 50%;
+      }
+      paper-icon-button[disabled] {
+        border-color: lightgray;
+      }
+      .control {
+        text-align: right;
+      }
+      .sessionTime {
+        font-size: 120%;
+        font-weight: bold;
+        text-align: right;
+        padding: 10px;
+        flex: 1;
+      }
+      .action {
+        display: flex;
+        flex-direction: column;
+      }
+      .info {
+        flex:1;
+      }
+      .info.done {
+        display: flex;
+      }
+      .time {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        min-height: 36px;
+        align-items: center;
+      }
+      .time span {
+        display: inline-block;
+        min-width: 40px;
+      }
+      .time div:not(:first-child) {
+        padding-left: 5px;
+      }
+      .info.done .time {
+        flex-direction: column-reverse;
+        align-items: flex-end;
+      }
+      .done .planned {
+        color: gray;
+      }
+      .exceed {
+        color: crimson;
+      }
+      label {
+        min-width: 70px;
+        display: inline-block;
+      }
+      paper-item-body[two-line] {
+        min-height:0px;
+        -webkit-justify-content: inherit;
+        justify-content: inherit;
+      }
+      .invisible {
+        visibility: hidden;
+      }
+
+      @media (max-width: 320px) {
+        .info.done {
+          display: block;
+        }
+      }
+    </style>
+    <div class="title">[[task.label]]</div>
+    <div class="content">
+      <div class$="info [[_doneClass(task.done)]]">
+        <paper-item-body two-line>
+          <div hidden=[[!_hasDueDate(task.dueDate)]]><label>due date :</label> [[_dueDate]]</div>
+          <div><label>started :</label> [[_startDate]]</div>
+          <div hidden=[[!task.done]] class$="[[_exceedClass(task.dueDate, task.endDate)]]"><label>done :</label> <b>[[_endDate]]</b></div>
+        </paper-item-body>
+        <div class="time">
+          <div class$="[[_plannedClass(task.planned)]]">planned : {{_toHourFormat(task.planned)}}</div>
+          <div class$="[[_consumedClass(task.consumed, task.planned)]]">consumed : <b><span>{{_toHourFormat(task.consumed)}}</span></b></div>
+        </div>
+      </div>
+      <div class="action" hidden=[[task.done]]>
+        <div class="sessionTime">
+          <div hidden=[[_isSessionVisible(task.done,_sessionStarted)]]>[[_sessionTime]]</div>
+        </div>
+        <div class="control">
+          <paper-icon-button hidden=[[task.done]] id="startBtn" icon="av:play-arrow" on-tap="_startSession"></paper-icon-button>
+          <paper-icon-button hidden=[[task.done]] id="pauseBtn" disabled icon="av:pause" on-tap="_pauseSession"></paper-icon-button>
+          <paper-icon-button hidden=[[task.done]] id="stopBtn" disabled icon="av:stop" on-tap="_stopSession"></paper-icon-button>
+        </div>
+      </div>
+    </div>
+
+  </template>
+
+  <script>
+    Polymer({
+      is: 'todo-task',
+
+      properties: {
+        /**
+        * The task object as describe above
+        */
+        task: {
+          type: Object,
+          value: function() {
+            return {
+              label      : "test",
+              done       : false,
+              state      : "stopped",
+              consumed   : 0,
+              sessionTime: 0
+            }
+          },
+          notify: true,
+          observer: '_taskChanged',
+        },
+
+        /**
+        * the done status of the task,
+        *
+        * it reflects the task done attribute. it's exposed to allow styling of done tasks.
+        * Setting the done property will be propagate to the task object.
+        */
+        done: {
+          type: Boolean,
+          reflectToAttribute: true,
+          notify: true,
+          observer: '_doneChanged',
+        },
+
+        _sessionTime: {
+          type: String,
+        },
+
+        _sessionStarted: {
+          type: Boolean,
+          value: false
+        },
+
+        /**
+        * the formatted started date
+        */
+        _startDate: {
+          type: String,
+          computed: '_dateChanged(task.startDate)'
+        },
+
+        /**
+        * the formatted due date
+        */
+        _dueDate: {
+          type: String,
+          computed: '_dateChanged(task.dueDate)'
+        },
+
+        /**
+        * the formatted end date
+        */
+        _endDate: {
+          type: String,
+          computed: '_dateChanged(task.endDate)'
+        },
+      },
+
+      ready: function() {
+
+      },
+
+      _doneChanged: function(value) {
+        if(value && this.task.done !== value) {
+          if (value) {
+            this._stopSession();
+            this.set('task.endDate', (new Date()).getTime()/1000);
+          }
+          this.set('task.done', value);
+        }
+      },
+
+      _taskChanged: function(task){
+        this.task.done = task.done || false;
+        this.done = this.task.done;
+        this.task.sessionTime = task.sessionTime || 0;
+      },
+
+      _dateChanged: function(date) {
+        return date?moment.unix(date).format('L'):'';
+      },
+
+      _hasDueDate: function(dueDate) {
+          return dueDate?true:false;
+      },
+
+      _exceedClass: function(dueDate, endDate) {
+        return dueDate && endDate>dueDate?"exceed":"";
+      },
+
+      _doneClass: function(done) {
+        return done?"done":""
+      },
+
+      _plannedClass: function(value) {
+        return value?"":"invisible";
+      },
+
+      _consumedClass: function(consumed, planned) {
+        return planned && consumed>planned?"exceed":"";
+      },
+
+      _toHourFormat: function(value) {
+        if(!value) return "0:00";
+        let twoDigits = (x) => (x<10?'0':'')+x;
+        return Math.floor(value / 60) + ':' + twoDigits(value % 60);
+      },
+
+      _isSessionVisible: function(done,_sessionStarted) {
+        return done || !_sessionStarted;
+      },
+
+      _startSession: function() {
+        if (!this.task.startDate) {
+          this.set('task.startDate', (new Date()).getTime() / 1000);
+        }
+        if(!this.task.sessionTime) {
+          this.set('task.sessionTime',0);
+        }
+        this.$.pauseBtn.disabled = false;
+        this.$.stopBtn.disabled = false;
+        this.$.startBtn.disabled = true;
+
+        this.task.state = "running";
+        if (!this._sessionStarted) {
+          this._sessionStarted = true;
+        }
+        if(!this._timer) {
+          this._startTime = Math.floor((new Date()).getTime() / 1000) - this.task.sessionTime;
+          this._timer = setInterval(()=> {
+            this.set('task.consumed',this.task.consumed+1);
+            this.task.sessionTime = Math.floor((new Date()).getTime()/1000 - this._startTime);
+            this._sessionTime = this._toHourFormat(this.task.sessionTime);
+          },1000);
+        }
+      },
+
+      _pauseSession: function() {
+        this.task.state = "paused";
+        clearInterval(this._timer);
+        this._timer = null;
+        this.$.pauseBtn.disabled = true;
+        this.$.stopBtn.disabled = false;
+        this.$.startBtn.disabled = false;
+      },
+
+      _stopSession: function() {
+        this._pauseSession();
+        this.task.state = "stopped";
+        this._sessionStarted = false;
+        this.task.sessionTime = 0;
+        this.$.pauseBtn.disabled = true;
+        this.$.stopBtn.disabled = true;
+        this.$.startBtn.disabled = false;
+      }
+    });
+  </script>
+</dom-module>

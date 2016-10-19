@@ -1,14 +1,10 @@
 <link rel="import" href="./todo-app-toolbar.html">
-<link rel="import" href="../paper-item/paper-item.html">
-<link rel="import" href="../paper-item/paper-item-body.html">
-<link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-fab/paper-fab.html">
-<link rel="import" href="../iron-icons/iron-icons.html">
-<link rel="import" href="../iron-icons/av-icons.html">
 <link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../iron-form/iron-form.html">
 <link rel="import" href="./todo-swipeable-card.html">
+<link rel="import" href="./todo-task.html">
 
 <!--
 # `<todo-project-view>`
@@ -24,21 +20,11 @@
         @apply(--fullbleed);
         @apply(--layout-vertical);
       }
-      paper-icon-button {
-        --paper-icon-button-ink-color: dodgerblue;
-        border:2px solid dodgerblue;
-        color: dodgerblue;
-        border-radius: 50%;
-        margin:10px;
+      todo-task {
+        border:1px solid lightgray;
       }
-      paper-icon-button[icon=done] {
-        --paper-icon-button-ink-color: lightseagreen;
-        color: MediumTurquoise;
-        border-color: MediumTurquoise;
-      }
-      paper-icon-button[icon=delete] {
-        color: crimson;
-        border-color: crimson;
+      todo-task[done] {
+        background: rgb(178, 191, 197);
       }
       paper-fab {
         position: absolute;
@@ -51,40 +37,9 @@
         overflow-y: auto;
         overflow-x: hidden;
       }
-      .control {
-        text-align: right;
-      }
-      .primary {
-        background: var(--primary-color);
-        color:var(--primary-background-color);
-      }
-      .secondary {
-        background: var(--secondary-text-color);
-        color:var(--primary-background-color);
-      }
-      .time {
-        font-weight: bold;
-        font-size: 24px;
-      }
-      .running {
-        @apply(--layout-vertical);
-        background:#d0e2e2;
-        transition: 0.3s ease-in-out;
-      }
-      .running .task {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        width: 100%;
-      }
-      .running .control {
-        display: flex;
-        align-items: center;
-        flex-direction: row-reverse;
-        width: 100%;
-      }
       #newtask {
         position: absolute;
+        top:0;
         left:0;
         right:0;
         background: white;
@@ -105,8 +60,8 @@
         display: flex;
         flex-direction: column;
       }
-      paper-item {
-        background: white;
+      .control {
+        text-align: right;
       }
     </style>
     <todo-app-toolbar label={{project.name}}></todo-app-toolbar>
@@ -114,46 +69,17 @@
 
     <div class="tasks-list">
       <template id="list" is="dom-repeat" items="{{project.tasks}}">
-        <todo-swipeable-card undo-timeout=1000
+        <todo-swipeable-card undo-timeout=1000 disabled={{item.done}}
                 on-iron-swipe="_todoAction" >
-        <template is="dom-if" if="{{!_isRunning(item)}}">
-          <!-- <todo-swipeable-card undo-timeout=1000
-                  on-iron-swipe="_todoAction" > -->
-            <paper-item>
-              <paper-item-body two-line>
-                <div>[[item.label]]</div>
-                <div secondary>[[item.status]]</div>
-              </paper-item-body>
-              <paper-icon-button class="pause" icon="av:play-arrow"></paper-icon-button>
-            </paper-item>
-          <!-- </todo-swipeable-card> -->
-        </template>
-        <template is="dom-if" if="{{_isRunning(item)}}">
-          <paper-item class="running">
-            <div class="task">
-              <paper-item-body two-line>
-                <div>{{current.label}}</div>
-                <div secondary>{{current.status}}</div>
-              </paper-item-body>
-              <div class="time">00:00</div>
-            </div>
-            <div class="control">
-              <paper-icon-button icon="av:pause"></paper-icon-button>
-              <paper-icon-button icon="av:stop"></paper-icon-button>
-              <!-- <paper-icon-button icon="done"></paper-icon-button> -->
-            </div>
-          </paper-item>
-        </template>
-      </todo-swipeable-card>
+          <todo-task task={{item}} ></todo-task>
+        </todo-swipeable-card>
       </template>
       <paper-fab icon="add" on-tap="_newTaskForm"></paper-fab>
-    </div>
-    <div id="done-tasks-list">
     </div>
 
     <div id="newtask" class="hidden">
       <form is="iron-form" id="form">
-        <paper-input label="label" value="{{_newTask.label}}" autofocus></paper-input>
+        <paper-input label="label" value="{{_newTask.label}}"></paper-input>
         <div class="layout horizontal">
           <paper-input label="due date" value="{{_newTask.dueDate}}"></paper-input>
           <paper-input label="planned time"  value="{{_newTask.planned}}"></paper-input>
@@ -186,17 +112,9 @@
       },
 
       _projectChanged: function() {
-        let _isRunning = task => task.status==="in progress";
+        let _isRunning = task => task.state==="running";
 
         this.current = this.project.tasks.filter(_isRunning)[0];
-      },
-
-      _isPending: (item) => {
-        return item.status === "pending";
-      },
-
-      _isProgress: (item) => {
-        return item.status === "in progress";
       },
 
       _newTaskForm: function() {
@@ -221,7 +139,7 @@
       },
 
       _todoAction: function(evt) {
-        console.log(evt.detail, evt.model.item);
+        // console.log(evt.detail, evt.model.item);
         switch (evt.detail.direction) {
           case 'done':
             this.push('project.done', evt.model.item);

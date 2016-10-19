@@ -7,44 +7,92 @@
     <meta name="mobile-web-app-capable" content="yes">
 
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
-
+    <script src="../../moment/min/moment-with-locales.min.js"></script>
+    <script>
+      moment.locale('fr');
+    </script>
     <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
-
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
     <link rel="import" href="../todo-swipeable-card.html">
 
-    <link rel="import" href="../../paper-item/paper-item.html">
-    <link rel="import" href="../../paper-item/paper-item-body.html">
-    <link rel="import" href="../../paper-icon-button/paper-icon-button.html">
-    <link rel="import" href="../../iron-icons/iron-icons.html">
-    <link rel="import" href="../../iron-icons/av-icons.html">
+    <link rel="import" href="../todo-task.html">
 
     <style is="custom-style" include="demo-pages-shared-styles iron-flex iron-positioning">
     body {
       padding:0px;
     }
-    paper-item {
-      background: white;
-      border:1px solid black;
-      box-sizing: border-box;
+    todo-task {
+      border:1px solid lightgray;
+      margin: 10px 0px;
+    }
+    todo-task[done] {
+      background: rgba(68, 101, 119,.3);
+    }
+    demo-snippet {
+      width: 80%;
+      margin: auto;
+      margin-top: 20px;
+      margin-bottom: 20px;
     }
     </style>
   </head>
   <body >
-    <p>test</p>
-      <todo-swipeable-card undo-timeout="1000">
-          <paper-item-body two-line>
-            <div>swipeable component</div>
-            <div secondary>in progress</div>
-          </paper-item-body>
-          <paper-icon-button class="pause" icon="av:play-arrow"></paper-icon-button>
-      </todo-swipeable-card>
-      <script>
-      let elt = document.querySelector('todo-swipeable-card');
-      elt.addEventListener('iron-swipe', (evt) => {
-        elt.parentNode.removeChild(elt);
-        console.log(evt.detail);
-      });
-      </script>
+    <demo-snippet>
+      <template>
+        <todo-swipeable-card undo-timeout="1000" >
+          <todo-task task='{
+                  "label":"Create a PWA"}'></todo-task>
+        </todo-swipeable-card>
+        <todo-swipeable-card undo-timeout="1000" >
+          <todo-task task='{
+                    "label":"Create todo-task component",
+                    "dueDate":1476828000,
+                    "startDate":1475618400,
+                    "consumed":2200,
+                    "planned":"2280" }' >
+          </todo-task>
+        </todo-swipeable-card>
+        <todo-swipeable-card undo-timeout="1000" disabled >
+          <todo-task task='{
+                    "label":"update todo-swipeable-card component",
+                    "done":true,
+                    "planned":13800,
+                    "consumed":67200,
+                    "startDate":1475618400,
+                    "endDate":1476396000 }'>
+          </todo-task>
+        </todo-swipeable-card>
+        <todo-swipeable-card undo-timeout="1000" disabled >
+          <todo-task task='{
+                  "label":"update todo-project-view component",
+                  "done":true,
+                  "planned":2400,
+                  "consumed":2200,
+                  "dueDate":1476309600,
+                  "startDate":1475618400,
+                  "endDate":1476396000 }'>
+          </todo-task>
+        </todo-swipeable-card>
+
+        <script>
+          document.addEventListener('iron-swipe', evt => {
+            const target = evt.target;
+            const task = target.querySelector('todo-task');
+            switch(evt.detail.direction) {
+              case 'done':
+                task.done = true;
+                target.disabled = true;
+                target.undo();
+                break
+              case 'delete':
+                target.parentNode.removeChild(target);
+                break;
+            }
+          }, false);
+        </script>
+      </template>
+    </demo-snippet>
+
   </body>
 </html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+  <head>
+    <title>todo-task demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../fetch/fetch.js"></script>
+    <script src="../../moment/min/moment-with-locales.min.js"></script>
+    <script>
+    /* this script must run before Polymer is imported */
+    window.Polymer = {
+      dom: 'shady',
+      lazyRegister: true
+    };
+    moment.locale('fr');
+  </script>
+
+    <link rel="import" href="../../iron-flex-layout/iron-flex-layout-classes.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+
+    <link rel="import" href="../todo-task.html">
+
+    <style is="custom-style" include="demo-pages-shared-styles iron-flex iron-positioning">
+    body {
+      padding:0px;
+      font-size: 16px;
+    }
+    todo-task {
+      margin:10px;
+      border:1px solid lightgray;
+    }
+    todo-task[done] {
+      background: lightgray;
+    }
+    </style>
+  </head>
+  <body>
+    <todo-task task='{
+            "label":"Create a PWA"}'></todo-task>
+    <todo-task task='{
+            "label":"Create todo-task component",
+            "dueDate":1476828000,
+            "startDate":1475618400,
+            "consumed":2200,
+            "planned":"2280" }' ></todo-task>
+    <todo-task task='{
+            "label":"update todo-swipeable-card component",
+            "done":true,
+            "planned":13800,
+            "consumed":67200,
+            "startDate":1475618400,
+            "endDate":1476396000 }'>
+    </todo-task>
+    <todo-task task='{
+            "label":"update todo-project-view component",
+            "done":true,
+            "planned":2400,
+            "consumed":2200,
+            "dueDate":1476309600,
+            "startDate":1475618400,
+            "endDate":1476396000 }'>
+    </todo-task>
+  </body>
+</html>

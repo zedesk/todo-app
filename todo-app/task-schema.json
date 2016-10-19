@@ -1,0 +1,34 @@
+{
+  "type":"object",
+  "properties": {
+    "label": {
+      "type": "string",
+      "description": "The label of the task",
+      "required": true
+    },
+    "state": {
+      "enum": ["stopped","running","paused"],
+      "description": "the state of the task"
+    },
+    "dueDate": {
+      "type": "integer",
+      "description": "timestamp of the due date"
+    },
+    "startDate": {
+      "type": "integer",
+      "description": "timestamp of the start date"
+    },
+    "endDate": {
+      "type": "integer",
+      "description": "timestamp of the end date ( when the task is done )"
+    },
+    "consumed": {
+      "type": "integer",
+      "description": "number of seconds consumed to realize the task"
+    },
+    "planned": {
+      "type": "integer",
+      "description": "number of seconds planned to realize the task"
+    },
+  }
+}

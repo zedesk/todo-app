@@ -68,14 +68,14 @@
       }
     </style>
     <div id="left" class="back left hidden">
-      <div class="undo" on-tap="_undo">Undo</div>
+      <div class="undo" on-tap="undo">Undo</div>
       <span class="spacer"></span>
       <div>Delete <iron-icon icon="delete"></iron-icon></div>
     </div>
     <div id="right" class="back right hidden">
       <div><iron-icon icon="done"></iron-icon> Done</div>
       <span class="spacer"></span>
-      <div class="undo" on-tap="_undo">Undo</div>
+      <div class="undo" on-tap="undo">Undo</div>
     </div>
     <div id="card" class="card">
       <content id="content"></content>
@@ -94,6 +94,16 @@
         swipeStyle: {
           type: String,
           value: 'horizontal'
+        },
+
+        /**
+        * If true, then the container will not allow swiping.
+        */
+        disabled: {
+          type: Boolean,
+          value: false,
+          notify: true,
+          reflectToAttribute: true
         },
 
         /**
@@ -179,19 +189,6 @@
         this.$$('.card').removeEventListener('touchmove',this._trackMove, false);
         this.$$('.card').removeEventListener('touchend',this._trackEnd, false);
         this.$$('.card').removeEventListener('transitionend',this._onTransitionEnd, false);
-        // this.unlisten(node, 'track', '_onTrack');
-        // this.unlisten(node, 'transitionend', '_onTransitionEnd');
-      },
-
-      _onTrack: function(evt) {
-        let track = evt.detail;
-        if (track.state === 'start') {
-          this._trackStart(track, this.$.card);
-        } else if (track.state === 'track' ) {
-          this._trackMove(track, this.$.card);
-        } else if (track.state === 'end') {
-          this._trackEnd(track, this.$.card);
-        }
       },
 
       _onTransitionEnd: function(evt) {
@@ -205,9 +202,18 @@
             });
           }, this.undoTimeout);
         }
+        if (!this._swipeComplete) {
+          if(!this.$.right.classList.contains('hidden')) {
+            this.$.right.classList.add('hidden');
+          }
+          if(!this.$.left.classList.contains('hidden')) {
+            this.$.left.classList.add('hidden');
+          }
+        }
       },
 
       _trackStart: function(evt) {
+        if (this.disabled) { return; }
         this._nodeWidth = this.$.card.offsetWidth;
         this._origX = evt.screenX || evt.changedTouches[0].screenX;
         this._track = true;
@@ -215,6 +221,7 @@
       },
 
       _trackMove: function( evt) {
+        if (this.disabled) { return; }
         if(!this._track) return
         const dx = ( evt.screenX || evt.changedTouches[0].screenX ) - this._origX;
         if ( dx > 25 || dx < -25) {
@@ -223,6 +230,7 @@
       },
 
       _trackEnd: function(evt) {
+        if (this.disabled) { return; }
         this._track = false;
         let target = this.$.card;
         const dx = ( evt.screenX || evt.changedTouches[0].screenX )- this._origX;
@@ -286,7 +294,7 @@
         }
       },
 
-      _undo: function() {
+      undo: function() {
         if (this._swipeComplete) {
           this._swipeComplete = false;
           clearTimeout(this._undoTimer);

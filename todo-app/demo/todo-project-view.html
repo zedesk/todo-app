@@ -5,13 +5,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
 
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
-
+    <script src="../../fetch/fetch.js"></script>
     <script>
     /* this script must run before Polymer is imported */
     window.Polymer = {
-      dom: 'shadow',
+      dom: 'shady',
       lazyRegister: true
     };
   </script>
@@ -32,7 +33,7 @@
       <todo-project-view project="{{project}}" class="fit"></todo-project-view>
     </template>
     <script>
-    const app = document.querySelector("#app");
+    var app = document.querySelector("#app");
 
     app.ready = () => {
         fetch("../data/project.json")
